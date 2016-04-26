@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Calendar</title>
+        <meta charset="utf-8" />
+        <link href="@routes.Assets.versioned("lib/fullcalendar/fullcalendar.css")" rel="stylesheet" />
+        <link href="@routes.Assets.versioned("lib/fullcalendar/fullcalendar.print.css")" rel="stylesheet" media="print" />
+
+        <script src="@routes.Assets.versioned("lib/momentjs/moment.js")"></script>
+        <script src="@routes.Assets.versioned("lib/jquery/jquery.js")"></script>
+        <script src="@routes.Assets.versioned("lib/fullcalendar/fullcalendar.js")"></script>
+        <script>
+
+	$(document).ready(function() {
+
+        $('#calendar').fullCalendar({
+            events: '/events',
+            header: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'month,agendaWeek,agendaDay'
+            },
+            defaultDate: '2016-01-12',
+            editable: true,
+            eventLimit: false // allow "more" link when too many events
+        });
+
+    });
+
+</script>
+        <style>
+
+        body {
+            margin: 40px 10px;
+            padding: 0;
+            font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+            font-size: 14px;
+        }
+
+        #calendar {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        </style>
+    </head>
+    <body>
+
+        <div id="calendar"></div>
+
+    </body>
+</html>
