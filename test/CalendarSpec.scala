@@ -4,6 +4,7 @@ import org.scalatest.selenium.Page
 import play.api.test.Helpers.testServerPort
 import com.github.nscala_time.time.Imports._
 import models.Event
+import org.openqa.selenium.interactions.Actions
 import org.scalatest.TestData
 import play.api.inject.guice.GuiceApplicationBuilder
 
@@ -56,6 +57,30 @@ class CalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserPerTest
 
     }
   }
+
+  "Event" must {
+    "be moved" in {
+
+      def moveElement(element: WebElement, toElement:WebElement) (implicit driver: WebDriver) = {
+        val moveActions = new Actions(driver)
+        moveActions.clickAndHold(element)
+        moveActions.moveToElement(toElement)
+        moveActions.release()
+        moveActions.build().perform()
+      }
+
+      go to CalendarPage
+
+      val calendar = findCalendar("calendar")
+
+      val events = calendar.getAllEvents
+
+      val cells = calendar.getAllCells
+
+      moveElement(events(EventData(DateTime.parse("2016-01-10T02:35:00"), 1, "First")), cells(LocalDate.parse("2016-01-14")))
+
+    }
+  }
 }
 
 case class CellMeasurements(date: LocalDate, x: Int, y: Int, height: Int, width: Int)
@@ -104,20 +129,9 @@ class Calendar(val calendarElement: WebElement) {
     calendarElement.findElements(By.xpath(".//div[@class='fc-row fc-week fc-widget-content']")).toList
   }
 
-  private def dayCellsInWeekBackgroundTable(week: WebElement): List[CellMeasurements] = {
-
-    def parseCellMeasurements(td: WebElement) = {
-      CellMeasurements(
-        date = parseDate(td),
-        x = td.getLocation.x,
-        y = td.getLocation.y,
-        width = td.getSize.height,
-        height = td.getSize.width
-      )
-    }
-
+  private def dayCellsInWeekBackgroundTable(week: WebElement): List[(LocalDate, WebElement)] = {
     week.findElements(By.xpath(".//div[@class='fc-bg']/table/tbody/tr/td"))
-      .map(parseCellMeasurements).toList
+      .map(td => (parseDate(td), td)).toList
   }
 
   private def datesInWeek(weekContainer: WebElement): List[LocalDate] = {
@@ -191,8 +205,12 @@ class Calendar(val calendarElement: WebElement) {
     loop(rows, dates, Nil)
   }
 
-  def getAllEvents(implicit driver: WebDriver): List[EventData] = {
-    weekContainers(calendarElement).flatMap(parseEventsInWeekContainer).map(_.eventData)
+  def getAllEvents(implicit driver: WebDriver): Map[EventData, WebElement] = {
+    weekContainers(calendarElement).flatMap(parseEventsInWeekContainer).map(ce=> (ce.eventData, ce.element)).toMap
+  }
+
+  def getAllCells(implicit driver: WebDriver): Map[LocalDate, WebElement] = {
+    weekContainers(calendarElement).flatMap(dayCellsInWeekBackgroundTable).toMap
   }
 
 }
