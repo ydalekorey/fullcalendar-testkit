@@ -19,7 +19,7 @@ import play.api.routing.sird._
   * Created by yuriy on 10.04.16.
   */
 
-class CalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserPerTest with FullCalendarSpec with FirefoxFactory {
+class MonthlyCalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserPerTest with FullCalendarSpec with FirefoxFactory {
 
   override def newAppForTest(testData: TestData) =
     new GuiceApplicationBuilder().additionalRouter(Router.from {
@@ -48,12 +48,12 @@ class CalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserPerTest
 
       events must have size 6
 
-      events must contain(EventData(DateTime.parse("2016-01-10T02:35:00"), 1, "First"))
-      events must contain(EventData(DateTime.parse("2016-01-12T14:30:00"), 1, "Second"))
-      events must contain(EventData(DateTime.parse("2016-01-12T17:30:00"), 2, "Third"))
-      events must contain(EventData(DateTime.parse("2016-01-12T18:35:00"), 1, "Fourth"))
-      events must contain(EventData(DateTime.parse("2016-01-15T17:30:00"), 1, "Fifths"))
-      events must contain(EventData(DateTime.parse("2016-01-15T18:35:00"), 1, "Sixths"))
+      events must contain key EventData(DateTime.parse("2016-01-10T02:35:00"), 1, "First")
+      events must contain key EventData(DateTime.parse("2016-01-12T14:30:00"), 1, "Second")
+      events must contain key EventData(DateTime.parse("2016-01-12T17:30:00"), 2, "Third")
+      events must contain key EventData(DateTime.parse("2016-01-12T18:35:00"), 1, "Fourth")
+      events must contain key EventData(DateTime.parse("2016-01-15T17:30:00"), 1, "Fifths")
+      events must contain key EventData(DateTime.parse("2016-01-15T18:35:00"), 1, "Sixths")
 
     }
   }
@@ -61,29 +61,16 @@ class CalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserPerTest
   "Event" must {
     "be moved" in {
 
-      def moveElement(element: WebElement, toElement:WebElement) (implicit driver: WebDriver) = {
-        val moveActions = new Actions(driver)
-        moveActions.clickAndHold(element)
-        moveActions.moveToElement(toElement)
-        moveActions.release()
-        moveActions.build().perform()
-      }
-
       go to CalendarPage
 
       val calendar = findCalendar("calendar")
 
-      val events = calendar.getAllEvents
+      calendar.moveEvent(EventData(DateTime.parse("2016-01-10T02:35:00"), 1, "First"), LocalDate.parse("2016-01-14"))
 
-      val cells = calendar.getAllCells
-
-      moveElement(events(EventData(DateTime.parse("2016-01-10T02:35:00"), 1, "First")), cells(LocalDate.parse("2016-01-14")))
-
+      calendar.containsEvent(EventData(DateTime.parse("2016-01-14T02:35:00"), 1, "First")) must be(true)
     }
   }
 }
-
-case class CellMeasurements(date: LocalDate, x: Int, y: Int, height: Int, width: Int)
 
 case class EventData(dateTime: DateTime, duration: Int, title: String)
 
@@ -125,7 +112,7 @@ class Calendar(val calendarElement: WebElement) {
   }
 
 
-  private def weekContainers(calendarElement: WebElement): List[WebElement] = {
+  private def weekContainers: List[WebElement] = {
     calendarElement.findElements(By.xpath(".//div[@class='fc-row fc-week fc-widget-content']")).toList
   }
 
@@ -206,11 +193,34 @@ class Calendar(val calendarElement: WebElement) {
   }
 
   def getAllEvents(implicit driver: WebDriver): Map[EventData, WebElement] = {
-    weekContainers(calendarElement).flatMap(parseEventsInWeekContainer).map(ce=> (ce.eventData, ce.element)).toMap
+    weekContainers.flatMap(parseEventsInWeekContainer).map(ce => (ce.eventData, ce.element)).toMap
   }
 
-  def getAllCells(implicit driver: WebDriver): Map[LocalDate, WebElement] = {
-    weekContainers(calendarElement).flatMap(dayCellsInWeekBackgroundTable).toMap
+  private def getAllCells(implicit driver: WebDriver): Map[LocalDate, WebElement] = {
+    weekContainers.flatMap(dayCellsInWeekBackgroundTable).toMap
+  }
+
+  def getEventElement(eventData: EventData)(implicit driver: WebDriver): WebElement = {
+    getAllEvents(driver)(eventData)
+  }
+
+  def containsEvent(eventData: EventData)(implicit driver: WebDriver) : Boolean = {
+    getAllEvents(driver) contains eventData
+  }
+
+  private def getCell(date: LocalDate)(implicit driver: WebDriver): WebElement = {
+    getAllCells(driver)(date)
+  }
+
+  def moveEvent(eventData: EventData, toDate: LocalDate)(implicit driver: WebDriver) = {
+    val event = getEventElement(eventData)
+    val cell = getCell(toDate)
+
+    val moveActions = new Actions(driver)
+    moveActions.clickAndHold(event)
+    moveActions.moveToElement(cell)
+    moveActions.release()
+    moveActions.build().perform()
   }
 
 }
