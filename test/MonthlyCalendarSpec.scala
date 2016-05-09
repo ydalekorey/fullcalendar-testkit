@@ -1,11 +1,10 @@
 import org.scalatestplus.play.{FirefoxFactory, OneBrowserPerTest, OneServerPerTest, PlaySpec}
 import org.openqa.selenium.{By, WebDriver, WebElement}
-import org.scalatest.selenium.Page
-import play.api.test.Helpers.testServerPort
 import com.github.nscala_time.time.Imports._
 import models.Event
 import org.openqa.selenium.interactions.Actions
 import org.scalatest.TestData
+import pages.CalendarPage
 import play.api.inject.guice.GuiceApplicationBuilder
 
 import scala.annotation.tailrec
@@ -75,11 +74,6 @@ class MonthlyCalendarSpec extends PlaySpec with OneServerPerTest with OneBrowser
 case class EventData(dateTime: DateTime, duration: Int, title: String)
 
 case class CalendarEvent(eventData: EventData, element: WebElement)
-
-object CalendarPage extends Page {
-  lazy val port = testServerPort
-  override val url: String = s"http://localhost:$port/calendar"
-}
 
 trait FullCalendarSpec {
   def findCalendar(calendarId: String)(implicit driver: WebDriver): Calendar = {
