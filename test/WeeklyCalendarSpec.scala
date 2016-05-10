@@ -11,6 +11,7 @@ import play.api.routing.Router
 import play.api.routing.sird._
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 /**
   * Created by yuriy on 29.04.16.
@@ -54,6 +55,19 @@ class WeeklyCalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserP
     }
   }
 
+  "Time slots" must {
+    "be parsed" in {
+
+      go to CalendarPage
+
+      clickOn(className("fc-agendaWeek-button"))
+
+      val timeRows = findCalendar("calendar").timeRows
+
+      timeRows.foreach({ case (k, v) => println(k) })
+    }
+  }
+
 }
 
 trait WeeklyCalendarSpecInternal {
@@ -80,8 +94,15 @@ class WeeklyCalendar(calendarId: String)(implicit driver: WebDriver) {
     val timeRows = calendarElement.findElements(By.xpath(".//div[@class='fc-slats']/table/tbody/tr"))
     val minutesInDay = 1440
     val timeInterval = minutesInDay / timeRows.size()
-    val
 
+    (0 until timeRows.size()).view
+      .map(n => LocalTime.Midnight.plusMinutes(n * timeInterval))
+      .toList.zip(timeRows).toMap
+
+  }
+
+  def eventContainers: List[WebElement] = {
+    val containers = calendarElement.findElements(By.xpath(".//div[@class='fc-content-skeleton']/table/tbody/tr/td/div[@class='fc-event-container']"))
   }
 
 }
