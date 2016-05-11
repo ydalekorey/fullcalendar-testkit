@@ -27,7 +27,7 @@ class WeeklyCalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserP
               Event(DateTime.parse("2016-01-10T02:35:00"), DateTime.parse("2016-01-10T03:35:00"), "First"),
               Event(DateTime.parse("2016-01-12T14:30:00"), DateTime.parse("2016-01-12T17:30:00"), "Second"),
               Event(DateTime.parse("2016-01-12T18:35:00"), DateTime.parse("2016-01-12T19:30:00"), "Fourth"),
-              Event(DateTime.parse("2016-01-15T17:30:00"), DateTime.parse("2016-01-15T17:30:00"), "Fifths"),
+              Event(DateTime.parse("2016-01-15T17:30:00"), DateTime.parse("2016-01-15T18:30:00"), "Fifths"),
               Event(DateTime.parse("2016-01-15T18:35:00"), DateTime.parse("2016-01-15T19:30:00"), "Sixths")
             )
           )
@@ -68,6 +68,19 @@ class WeeklyCalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserP
     }
   }
 
+  "Events" must {
+    "be parsed" in {
+
+      go to CalendarPage
+
+      clickOn(className("fc-agendaWeek-button"))
+
+      findCalendar("calendar").getEvents.foreach(println)
+
+
+    }
+  }
+
 }
 
 trait WeeklyCalendarSpecInternal {
@@ -102,8 +115,32 @@ class WeeklyCalendar(calendarId: String)(implicit driver: WebDriver) {
   }
 
   def eventContainers: List[WebElement] = {
-    val containers = calendarElement.findElements(By.xpath(".//div[@class='fc-content-skeleton']/table/tbody/tr/td/div[@class='fc-event-container']"))
+    calendarElement.findElements(By.xpath(".//div[@class='fc-content-skeleton']/table/tbody/tr/td/div[@class='fc-event-container']")).toList
+  }
+
+  def eventElements(eventContainer: WebElement): List[WebElement] = {
+    eventContainer.findElements(By.tagName("a")).toList
+  }
+
+  def parseEvent(eventElement: WebElement): WeekEventData = {
+    val timeFormat = DateTimeFormat.forPattern("hh:mm a")
+    val timeExp = """\d{1,2}:\d{1,2} [AP]M"""
+    val timeRangeRegExp = s"""($timeExp) - ($timeExp)""".r
+
+    val content = eventElement.findElement(By.xpath("./div[@class='fc-content']"))
+    val timeRangeRegExp(startTimeString, endTimeString) = content.findElement(By.xpath("./div[@class='fc-time']")).getAttribute("data-full")
+    val startTime  = LocalTime.parse(startTimeString, timeFormat)
+    val endTime = LocalTime.parse(endTimeString, timeFormat)
+    val title = content.findElement(By.xpath("./div[@class='fc-title']")).getText
+
+    WeekEventData(startTime, endTime, title)
+
+  }
+
+  def getEvents: List[WeekEventData] = {
+    eventContainers.flatMap(eventElements).map(parseEvent)
   }
 
 }
 
+case class WeekEventData(startTime: LocalTime, endTime: LocalTime, title: String)
