@@ -55,19 +55,6 @@ class WeeklyCalendarSpec extends PlaySpec with OneServerPerTest with OneBrowserP
     }
   }
 
-  "Time slots" must {
-    "be parsed" in {
-
-      go to CalendarPage
-
-      clickOn(className("fc-agendaWeek-button"))
-
-      val timeRows = findCalendar("calendar").timeRows
-
-      timeRows.foreach({ case (k, v) => println(k) })
-    }
-  }
-
   "Events" must {
     "be parsed" in {
 
